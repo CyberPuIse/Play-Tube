@@ -18,7 +18,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract uploaded ZIP files safely
+      - name: Extract uploaded ZIP files safely (skip workflow files)
         run: |
           python3 <<'PY'
           from pathlib import Path
@@ -35,6 +35,13 @@ jobs:
                       target = (root / member.filename).resolve()
                       if target != root and root not in target.parents:
                           raise RuntimeError(f"Unsafe ZIP path: {member.filename}")
+
+                      # Skip workflow files; GitHub token cannot push workflow changes.
+                      relative = target.relative_to(root)
+                      if len(relative.parts) >= 3 and relative.parts[:2] == (".github", "workflows"):
+                          print(f"Skipping workflow file: {member.filename}")
+                          continue
+
                       if member.is_dir():
                           target.mkdir(parents=True, exist_ok=True)
                           continue
