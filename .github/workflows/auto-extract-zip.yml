@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: write
-  workflows: write
 
 jobs:
   extract:
@@ -43,6 +42,7 @@ jobs:
                       with zf.open(member) as src, open(target, "wb") as dst:
                           shutil.copyfileobj(src, dst)
               archive.unlink()
+          PY
 
       - name: Commit extracted files
         run: |
