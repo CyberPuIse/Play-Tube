@@ -1,0 +1,486 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PlayTube</string>
+    <string name="downloads_search_hint">Search downloads</string>
+    <string name="folder_all">All</string>
+    <string name="folder_music">Music</string>
+    <string name="folder_videos">Videos</string>
+    <string name="folder_new_chip">+ Folder</string>
+    <string name="folder_move">Move to folder</string>
+    <string name="folder_none">No folder</string>
+    <string name="folder_new">New folder</string>
+    <string name="folder_name_hint">Folder name</string>
+    <string name="folder_exists">Folder name is empty or already exists</string>
+    <string name="folder_delete_confirm">"%1$s" will be removed. Your downloaded videos stay safe.</string>
+    <string name="download_delete_action">Delete</string>
+    <string name="empty_downloads_search">No downloads match</string>
+    <string name="settings_wifi_only_downloads">Download on Wi-Fi only</string>
+    <string name="download_wifi_only_blocked">Wi-Fi only downloads is on. Connect to Wi-Fi, or turn it off in Menu → Settings.</string>
+    <string name="offline_title">You\'re offline</string>
+    <string name="offline_message">No internet connection. You can still watch your downloaded videos.</string>
+    <string name="offline_dismiss">Close</string>
+    <string name="offline_view_downloads">View downloads</string>
+    <string name="back_online">Back online</string>
+    <string name="notif_channel_playback">Playback</string>
+    <string name="notif_favorite">Favorite</string>
+    <string name="notif_unfavorite">Remove favorite</string>
+    <string name="notif_close">Close</string>
+    <string name="splash_word_play">Play</string>
+    <string name="splash_word_tube">Tube</string>
+    <string name="splash_tagline">WATCH  ·  LISTEN  ·  DOWNLOAD</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title">Choose your country / region</string>
+    <string name="onboarding_subtitle">Your home feed suggests videos based on the selected region. You can change this anytime from the Menu tab.</string>
+    <string name="search_country_hint">Search country</string>
+    <string name="continue_label">Continue</string>
+    <string name="welcome_toast">Region set to %1$s %2$s</string>
+
+    <!-- Main tabs -->
+    <string name="tab_home">Home</string>
+    <string name="tab_music">Music</string>
+    <string name="tab_library">History</string>
+    <string name="menu_library_hint">Watched videos, favorites, playlists</string>
+    <string name="tab_menu">Menu</string>
+    <string name="press_back_again">Press back again to exit</string>
+
+    <!-- Home -->
+    <string name="search_hint">Search videos</string>
+    <string name="search_music_hint">Search songs</string>
+    <string name="trending_in">Suggested in %1$s %2$s</string>
+    <string name="crash_test_desc">Test crash</string>
+
+    <!-- Library -->
+    <string name="tab_history">History</string>
+    <string name="tab_favorites">Favorites</string>
+    <string name="tab_subscriptions">Subscriptions</string>
+    <string name="tab_downloads">Downloads</string>
+    <string name="empty_history">Videos you watch will show up here</string>
+    <string name="empty_favorites">Tap the heart while playing a video to save it here</string>
+    <string name="empty_subscriptions">Subscribe to channels from a video page to see them here</string>
+    <string name="empty_downloads">Downloads you start will show up here</string>
+    <string name="removed_from_history">Removed from history</string>
+    <string name="removed_from_favorites">Removed from favorites</string>
+    <string name="added_to_favorites">Added to favorites</string>
+
+    <!-- Menu -->
+    <string name="country_region">Country / Region</string>
+    <string name="change_country">Choose your country / region</string>
+    <string name="country_changed">Region changed to %1$s</string>
+    <string name="clear_history">Clear watch history</string>
+    <string name="clear_history_confirm">Remove all watched videos from history?</string>
+    <string name="history_cleared">Watch history cleared</string>
+    <string name="clear_search_history">Clear search history</string>
+    <string name="clear_search_history_confirm">Remove all recent searches?</string>
+    <string name="search_history_cleared">Search history cleared</string>
+    <string name="clear_favorites">Clear favorites</string>
+    <string name="clear_favorites_confirm">Remove all favorite videos?</string>
+    <string name="favorites_cleared">Favorites cleared</string>
+    <string name="about">About</string>
+    <string name="about_text">PlayTube is a lightweight YouTube client for Android, built with Kotlin and NewPipeExtractor. It shows country-based video suggestions and never displays live streams. This project is for educational purposes and is not affiliated with YouTube or Google. Based on the open-source SparkTube by devfahim00 and NewPipeExtractor, licensed under GPLv3.</string>
+    <string name="github">Original project</string>
+    <string name="version_fmt">Version %1$s</string>
+
+    <!-- Player / errors -->
+    <string name="live_not_supported">Live streams are not shown in PlayTube</string>
+    <string name="error_no_results">No videos found</string>
+    <string name="error_no_songs">No songs found</string>
+    <string name="error_no_streams">This video cannot be played</string>
+    <string name="retry">Retry</string>
+
+    <!-- Player actions -->
+    <string name="action_favorite">Favorite</string>
+    <string name="saved_short">Saved</string>
+    <string name="action_share">Share</string>
+    <string name="action_download">Download</string>
+    <string name="action_background">Background play</string>
+    <string name="action_pip">Picture in picture</string>
+    <string name="action_speed">Playback speed</string>
+    <string name="action_quality">Quality</string>
+    <string name="action_audio_track">Audio track</string>
+    <string name="quality_auto">Auto (best available)</string>
+    <string name="quality_audio_only">Audio only</string>
+    <string name="speed_label">Playback speed</string>
+    <string name="audio_track_label">Audio track</string>
+    <string name="quality_label">Video quality</string>
+    <string name="subscribers_fmt">%1$s subscribers</string>
+    <string name="views_fmt">%1$s views</string>
+    <string name="related_videos">Related</string>
+    <string name="subscribe">SUBSCRIBE</string>
+    <string name="subscribed">SUBSCRIBED</string>
+    <string name="subscribed_toast">Subscribed</string>
+    <string name="unsubscribed_toast">Unsubscribed</string>
+    <string name="background_started">Playing in background</string>
+    <string name="pip_unsupported">Picture in picture is not supported on this device</string>
+    <string name="share_via">Share video via</string>
+
+    <!-- Downloads -->
+    <string name="download_started">Download started</string>
+    <string name="download_tap_to_view">Tap to view</string>
+    <string name="download_audio_section">Audio only</string>
+    <string name="download_video_section">Video only</string>
+    <string name="download_av_section">Video + Audio</string>
+    <string name="download_pair_note">Downloads the video and audio tracks as a pair — they play together in PlayTube</string>
+    <string name="download_muxed_note">Best quality (video + audio in one file, plays in any player)</string>
+    <string name="download_delete_confirm">Delete this download?</string>
+    <string name="download_deleted">Download deleted</string>
+    <string name="download_status_pending">Waiting</string>
+    <string name="download_status_running">Downloading</string>
+    <string name="download_status_done">Completed</string>
+    <string name="download_status_failed">Failed</string>
+    <string name="download_type_audio">Audio</string>
+    <string name="download_type_video">Video</string>
+    <string name="download_type_av">Video + Audio</string>
+
+    <!-- Music -->
+    <string name="music_trending_shelf">Trending now</string>
+    <string name="music_popular_section">Popular right now</string>
+    <string name="music_genres_section">Browse genres</string>
+    <string name="start_radio">Start radio</string>
+    <string name="radio_started">Radio started</string>
+    <string name="now_playing">Now playing</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_previous">Previous</string>
+    <string name="cd_next">Next</string>
+    <string name="cd_play">Play</string>
+    <string name="cd_pause">Pause</string>
+
+    <!-- Channel -->
+    <string name="channel_videos">Videos</string>
+
+    <string name="action_fullscreen">Fullscreen</string>
+    <string name="action_scale_mode">Video scale mode</string>
+    <string name="scale_fit">Fit — whole video visible</string>
+    <string name="scale_crop">Crop — fills the screen</string>
+    <string name="scale_stretch">Stretch — fill screen, may distort</string>
+    <string name="video_settings">Video settings</string>
+    <string name="settings_quality_section">Quality</string>
+    <string name="settings_speed_section">Playback speed</string>
+    <string name="settings_audio_track_section">Audio track</string>
+    <string name="quality_auto_short">Auto</string>
+    <string name="speed_normal">Normal</string>
+    <string name="audio_track_original">original</string>
+    <string name="audio_track_switched_to">Audio track: %1$s</string>
+
+    <!-- Common -->
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+
+    <!-- Search tabs + upload date filters -->
+    <string name="search_tab_videos">Videos</string>
+    <string name="search_tab_channels">Channels</string>
+    <string name="search_filters">Filters</string>
+    <string name="filter_any">Any time</string>
+    <string name="filter_today">Today</string>
+    <string name="filter_this_week">This week</string>
+    <string name="filter_this_month">This month</string>
+    <string name="filter_group_date">Upload date</string>
+    <string name="filter_group_duration">Duration</string>
+    <string name="filter_group_sort">Sort by</string>
+    <string name="filter_dur_short">Under 4 min</string>
+    <string name="filter_dur_medium">4–20 min</string>
+    <string name="filter_dur_long">Over 20 min</string>
+    <string name="sort_relevance">Relevance</string>
+    <string name="sort_newest">Newest</string>
+    <string name="sort_views">Most viewed</string>
+    <string name="storage_title">Storage</string>
+    <string name="storage_free">%1$s free of %2$s</string>
+    <string name="storage_music">Music %1$s</string>
+    <string name="storage_videos">Videos %1$s</string>
+    <string name="settings_sponsorblock">SponsorBlock (skip sponsors)</string>
+    <string name="settings_sponsorblock_intro">SponsorBlock: skip intros &amp; outros</string>
+    <string name="sb_skipped_sponsor">Skipped sponsor</string>
+    <string name="sb_skipped_promo">Skipped self-promotion</string>
+    <string name="sb_skipped_interaction">Skipped reminder</string>
+    <string name="sb_skipped_intro">Skipped intro</string>
+    <string name="sb_skipped_outro">Skipped outro</string>
+    <string name="filter_apply">Apply</string>
+    <string name="filter_reset">Reset</string>
+    <string name="voice_prompt">Speak to search</string>
+    <string name="voice_unavailable">Voice search isn\'t available on this device</string>
+    <string name="suggestion_fill">Use this suggestion</string>
+    <string name="error_no_channels">No channels found</string>
+
+    <!-- Menu -->
+    <string name="menu_join_telegram">Join Telegram</string>
+
+    <!-- Settings submenus -->
+    <string name="menu_settings">Settings</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_auto">Auto (system)</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_pitch_black">Pitch black</string>
+    <string name="settings_accent">Accent color</string>
+    <string name="settings_animations">Animations</string>
+    <string name="accent_red">Red</string>
+    <string name="accent_blue">Blue</string>
+    <string name="accent_purple">Purple</string>
+    <string name="accent_green">Spotify green</string>
+    <string name="accent_orange">Orange</string>
+    <string name="accent_pink">Pink</string>
+    <string name="accent_teal">Teal</string>
+    <string name="menu_video_settings">Video settings</string>
+    <string name="settings_default_quality">Default video quality</string>
+    <string name="settings_default_quality_wifi">Default video quality (Wi-Fi)</string>
+    <string name="settings_default_quality_data">Default video quality (mobile data)</string>
+    <string name="settings_autoplay_next_video">Autoplay next video</string>
+    <string name="settings_smart_streaming">Smart streaming (instant start, adaptive quality)</string>
+    <string name="menu_music_settings">Music settings</string>
+    <string name="settings_audio_quality">Audio quality</string>
+    <string name="quality_high">High (best bitrate)</string>
+    <string name="quality_medium">Medium</string>
+    <string name="quality_low">Low (data saver)</string>
+    <string name="settings_autoplay_next_song">Autoplay next song</string>
+    <string name="default_quality_note">Used when a video starts; if the selected quality is not available the next lower one is played</string>
+
+    <!-- Crash logs (local, Firebase-free crash reporting) -->
+    <string name="settings_crash_logs">Crash logs</string>
+    <string name="crash_logs_location_hint">Crash logs are saved as plain-text files in the PlayTube folder on your device</string>
+    <string name="crash_logs_empty">No crash logs yet. If the app ever crashes, a report will appear here automatically.</string>
+    <string name="crash_log_share">Share crash log</string>
+    <string name="crash_logs_share_all">Share all logs</string>
+    <string name="crash_logs_delete_all">Delete all logs</string>
+    <string name="crash_logs_delete_confirm">Delete all saved crash log files from the device?</string>
+    <string name="crash_logs_deleted">Deleted %1$d crash logs</string>
+
+    <!-- Clear data submenu -->
+    <string name="menu_clear_data">Clear data</string>
+    <string name="clear_music_history">Clear music history</string>
+    <string name="clear_music_history_confirm">Remove all played songs from the music history?</string>
+    <string name="music_history_cleared">Music history cleared</string>
+    <string name="clear_subscriptions">Clear subscriptions</string>
+    <string name="clear_subscriptions_confirm">Unsubscribe from all channels?</string>
+    <string name="subscriptions_cleared">Subscriptions cleared</string>
+    <string name="clear_downloads">Clear downloads</string>
+    <string name="clear_downloads_confirm">Delete all downloaded files and records?</string>
+    <string name="downloads_cleared">Downloads cleared</string>
+    <string name="clear_recommendations">Reset recommendations</string>
+    <string name="clear_recommendations_confirm">Reset the on-device recommendation profile?</string>
+    <string name="recommendations_cleared">Recommendations reset</string>
+
+    <!-- Import / export -->
+    <string name="menu_backup_restore">Backup &amp; restore</string>
+    <string name="menu_import">Import data</string>
+    <string name="menu_export">Export data</string>
+    <string name="import_done">Data imported</string>
+    <string name="import_failed">Import failed</string>
+    <string name="export_done">Backup saved</string>
+    <string name="export_failed">Export failed</string>
+
+    <!-- Updates -->
+    <string name="menu_check_update">Check for update</string>
+    <string name="checking_update">Checking for updates…</string>
+    <string name="up_to_date">You are on the latest version</string>
+    <string name="update_available_title">Update available</string>
+    <string name="update_download">Download update</string>
+    <string name="later">Later</string>
+    <string name="update_required_title">Update required</string>
+    <string name="update_optional_title">Update available</string>
+    <string name="update_required_msg">A new version of PlayTube is ready. Please update to keep using the app.</string>
+    <string name="update_version_fmt">%1$s  →  %2$s</string>
+    <string name="update_whats_new">What\'s new</string>
+    <string name="update_btn_update">Update now</string>
+    <string name="update_btn_downloading">Downloading…</string>
+    <string name="update_btn_install">Install</string>
+    <string name="update_btn_retry">Try again</string>
+    <string name="update_progress_fmt">%1$s of %2$s</string>
+    <string name="update_progress_unknown_fmt">%1$s downloaded</string>
+    <string name="update_speed_fmt">%1$s/s</string>
+    <string name="update_failed">Download failed. Check your connection and try again.</string>
+    <string name="update_bad_file">The downloaded file is damaged. Please try again.</string>
+    <string name="update_allow_install">Allow PlayTube to install apps, then come back</string>
+    <string name="update_not_configured">Update checks are not set up yet</string>
+    <string name="update_check_failed">Could not check for updates</string>
+
+    <!-- Music favourites / downloads -->
+    <string name="music_favorites">Favorites</string>
+    <string name="music_downloads">Downloads</string>
+    <string name="empty_music_favorites">Songs you favorite will show up here</string>
+    <string name="empty_music_downloads">Music you download will show up here</string>
+
+    <!-- Download state on player pages -->
+    <string name="downloaded_label">Downloaded</string>
+    <string name="already_downloaded">Already downloaded — see your downloads list</string>
+    <string name="downloading_fmt">Downloading • %1$d%%</string>
+    <string name="download_option_done">Downloaded</string>
+
+    <!-- Playlists -->
+    <string name="tab_playlists">Playlists</string>
+    <string name="action_playlist">Add to playlist</string>
+    <string name="playlist_sheet_title">Add to playlist</string>
+    <string name="playlist_sheet_empty">No playlists yet — create one to start organizing videos</string>
+    <string name="new_playlist">New playlist</string>
+    <string name="new_playlist_hint">Playlist name</string>
+    <string name="create_playlist">Create</string>
+    <string name="playlist_name_empty">Please enter a playlist name</string>
+    <string name="playlist_name_exists">A playlist with this name already exists</string>
+    <string name="playlist_added">Added</string>
+    <string name="saved_to_playlist_fmt">Saved to %1$s</string>
+    <string name="removed_from_playlist_fmt">Removed from %1$s</string>
+    <string name="removed_from_playlist">Removed from playlist</string>
+    <string name="remove_from_playlist_confirm">Remove this video from the playlist?</string>
+    <string name="empty_playlists">Use the Add to playlist button on any video to build your first playlist</string>
+    <string name="empty_playlist_videos">No videos in this playlist yet</string>
+    <string name="delete_playlist_confirm">Delete this playlist?</string>
+    <string name="playlist_deleted">Playlist deleted</string>
+    <string name="play_all">Play all</string>
+
+    <plurals name="playlist_video_count">
+        <item quantity="one">%1$d video</item>
+        <item quantity="other">%1$d videos</item>
+    </plurals>
+
+    <!-- Watch page: description + comments -->
+    <string name="desc_show_more">Show more</string>
+    <string name="desc_show_less">Show less</string>
+    <string name="desc_empty">No description</string>
+    <string name="comments_title">Comments</string>
+    <string name="comments_count_fmt">%1$s comments</string>
+    <string name="comments_loading">Loading comments…</string>
+    <string name="comments_disabled">Comments are turned off for this video</string>
+    <string name="comments_empty">No comments yet</string>
+    <string name="comments_error">Couldn\'t load comments. Tap to retry.</string>
+    <string name="comments_pinned">Pinned</string>
+    <string name="comments_replies_fmt">%1$d replies</string>
+    <string name="comments_reply_one">1 reply</string>
+    <string name="comments_view_replies_fmt">View %1$d replies</string>
+    <string name="comments_view_reply_one">View 1 reply</string>
+    <string name="comments_hide_replies">Hide replies</string>
+    <string name="comments_replies_loading">Loading replies…</string>
+    <string name="comments_more_replies">Show more replies</string>
+    <string name="comments_replies_error">Couldn\'t load replies. Try again.</string>
+    <string name="cd_close">Close</string>
+
+    <!-- Music: modern home + queue -->
+    <string name="greeting_morning">Good morning</string>
+    <string name="greeting_afternoon">Good afternoon</string>
+    <string name="greeting_evening">Good evening</string>
+    <string name="greeting_night">Good night</string>
+    <string name="music_home_subtitle">What do you want to listen to?</string>
+    <string name="music_search_field">Search songs, artists…</string>
+    <string name="cd_play_song">Play</string>
+    <string name="queue_title">Up next</string>
+    <string name="queue_radio_badge">Radio</string>
+    <string name="queue_now_playing">Now playing</string>
+    <string name="queue_loading">Finding songs for your radio…</string>
+    <string name="queue_songs_fmt">%1$d songs in queue</string>
+    <string name="queue_empty">Nothing queued yet</string>
+    <string name="cd_queue">Queue</string>
+    <string name="up_next_label">Up next</string>
+    <string name="up_next_radio_label">Radio · Up next</string>
+    <string name="playing_from_radio">Playing from radio</string>
+    <string name="playing_from_queue">Playing from your queue</string>
+    <string name="music_play_all">Play all</string>
+    <string name="music_songs_fmt">%1$d songs</string>
+    <string name="video_options">Video options</string>
+    <string name="video_more_options">More options for %1$s</string>
+    <string name="video_remove_from_list">Remove from this list</string>
+    <string name="video_remove_favorite">Remove from favorites</string>
+    <string name="settings_captions">Captions</string>
+    <string name="captions_off">Off</string>
+    <string name="settings_chapters">Chapters</string>
+    <string name="nav_shorts">Shorts</string>
+    <string name="shorts_empty">No Shorts found right now</string>
+    <string name="premium_label">Premium</string>
+    <string name="short_share">Share</string>
+    <string name="download_pause_all">Pause all</string>
+    <string name="download_resume_all">Resume all</string>
+    <string name="subs_all">All</string>
+    <string name="folder_create">Create</string>
+    <string name="folder_delete_title">Delete folder?</string>
+    <string name="tab_watch_later">Watch later</string>
+    <string name="empty_watch_later">Videos you save for later show up here</string>
+    <string name="menu_watch_later">Save to Watch later</string>
+    <string name="menu_watch_later_remove">Remove from Watch later</string>
+    <string name="menu_not_interested">Not interested</string>
+    <string name="snack_undo">Undo</string>
+    <string name="snack_hidden">Got it — we\'ll show fewer videos like this</string>
+    <string name="snack_watch_later_added">Saved to Watch later</string>
+    <string name="snack_watch_later_removed">Removed from Watch later</string>
+    <string name="cat_all">All</string>
+    <string name="cat_bangla">Bangla</string>
+    <string name="cat_music">Music</string>
+    <string name="cat_gaming">Gaming</string>
+    <string name="cat_news">News</string>
+    <string name="cat_comedy">Comedy</string>
+    <string name="cat_sports">Sports</string>
+    <string name="cat_cooking">Cooking</string>
+    <string name="cat_tech">Tech</string>
+    <string name="cat_movies">Movies</string>
+    <string name="autoplay_play_now">Play now</string>
+    <string name="autoplay_up_next">Up next in %1$d</string>
+    <string name="skip_seconds">%1$d seconds</string>
+    <string name="intro_skip">Skip</string>
+    <string name="intro_next">Next</string>
+    <string name="intro_start">Get started</string>
+    <string name="intro_title_1">Watch without limits</string>
+    <string name="intro_text_1">Videos and music in one fast, ad-free app.</string>
+    <string name="intro_title_2">Your library, offline</string>
+    <string name="intro_text_2">Download videos, sort them into folders and keep watching without internet.</string>
+    <string name="intro_title_3">Made for you</string>
+    <string name="intro_text_3">Subscribe, save for later and get recommendations that match your taste.</string>
+    <string name="section_appearance">Appearance</string>
+    <string name="section_downloads">Downloads and data</string>
+    <string name="section_support">Support</string>
+    <string name="section_quality">Quality</string>
+    <string name="section_playback">Playback</string>
+    <string name="section_sound">Sound</string>
+    <string name="menu_section_you">You</string>
+    <string name="menu_section_preferences">Preferences</string>
+    <string name="menu_section_data">Data and updates</string>
+    <string name="menu_section_community">Community</string>
+    <string name="menu_header_tagline">Watch · Listen · Download</string>
+    <string name="menu_general_hint">Theme, accent, animations</string>
+    <string name="menu_video_hint">Quality and playback</string>
+    <string name="menu_music_hint">Audio quality and autoplay</string>
+    <string name="menu_backup_hint">Export or import your data</string>
+    <string name="menu_update_hint">See if a newer version is out</string>
+    <string name="menu_about_hint">Credits and license</string>
+    <string name="menu_telegram_hint">News, help and feedback</string>
+    <string name="lyrics">Lyrics</string>
+    <string name="lyrics_loading">Looking for lyrics…</string>
+    <string name="lyrics_not_found">No lyrics found for this song</string>
+    <string name="folder_delete_message">What should happen to the videos inside \"%1$s\"?</string>
+    <string name="folder_delete_keep">Delete folder only</string>
+    <string name="folder_delete_all">Delete folder and downloads</string>
+    <string name="menu_section_developer">Developer</string>
+    <string name="developer_name">Developer info</string>
+    <string name="developer_initial">N</string>
+    <string name="developer_hint">Nishad · @YellowlFlash</string>
+    <string name="dev_title">Developer info</string>
+    <string name="dev_name">Nishad</string>
+    <string name="dev_role">Developer &amp; Designer</string>
+    <string name="dev_about_text">PlayTube is designed and built by Nishad. For ideas, problems or anything about the app, message on Telegram.</string>
+    <string name="dev_section_contact">Contact</string>
+    <string name="dev_telegram_label">Telegram</string>
+    <string name="dev_telegram_handle">@YellowlFlash</string>
+    <string name="dev_section_app">About the app</string>
+    <string name="dev_app_name">PlayTube</string>
+    <string name="dev_app_version">Version %1$s (build %2$d)</string>
+    <string name="dev_copied">Copied</string>
+    <string name="dev_copy_hint">Hold to copy the username</string>
+    <string name="about_row_title">About app</string>
+    <string name="about_row_hint">Free software, credits, source code</string>
+    <string name="about_page_title">About PlayTube</string>
+    <string name="about_page_summary">PlayTube is free software: you can redistribute it and modify it under the terms of the GNU General Public License, version 3. It comes with ABSOLUTELY NO WARRANTY.</string>
+    <string name="about_page_modified">PlayTube is a modified version of SparkTube 1.4.2 by devfahim00, modified by Nishad in 2026. SparkTube is built on NewPipeExtractor by the NewPipe team.</string>
+    <string name="about_btn_source">Source code</string>
+    <string name="about_btn_license">GNU GPL v3 license</string>
+    <string name="about_section_libs">Open-source libraries</string>
+    <string name="about_libs_text">NewPipeExtractor — GPL-3.0\nAndroidX, Material Components, Media3 — Apache-2.0\nCoil, OkHttp, kotlinx.coroutines — Apache-2.0\njsoup — MIT\nRhino — MPL-2.0\nProtocol Buffers — BSD-3-Clause\nOther libraries are listed in app/build.gradle.kts with their own licenses.</string>
+    <string name="about_section_data">Data sources</string>
+    <string name="about_data_text">SponsorBlock segments by the SponsorBlock community, licensed CC BY-NC-SA 4.0 (sponsor.ajay.app). Synced lyrics from lrclib.net.</string>
+    <string name="about_disclaimer">PlayTube is not affiliated with, endorsed by or sponsored by YouTube or Google. YouTube is a trademark of Google LLC.</string>
+    <string name="about_source_not_set">Source link is not set yet</string>
+    <string name="section_about">About</string>
+    <string name="about_btn_privacy">Privacy policy (online)</string>
+    <string name="about_section_privacy">Privacy policy</string>
+    <string name="about_section_perms">Permissions</string>
+    <string name="about_privacy_text">Last updated: 23 November 2026\n\nPlayTube needs no account and does not collect, sell or share personal data. It has no ads, no analytics and no tracking. The developer receives no data from the app.\n\nStored only on your device\nWatch history, search history, subscriptions, playlists, favorites, watch later, downloads, settings and local crash logs. Crash logs are shared only when you choose to share them. You can erase everything in Settings → Clear data, and uninstalling the app removes it all.\n\nNetwork connections the app makes\n• YouTube and Google servers (youtube.com, googlevideo.com, ytimg.com) to search, load videos, comments, thumbnails and streams. Like any browser, these servers see your IP address.\n• SponsorBlock (sponsor.ajay.app), only when enabled: it receives the first 4 characters of a hash of the video ID, never the full ID or who you are.\n• lrclib.net, for lyrics: it receives the song title, channel name and duration.\n• The update server (hosted on Cloudflare): the app fetches a small version file when it opens, and downloads the new APK when you update. The server can see your IP address.\n• Telegram and GitHub links open in your browser or app only when you tap them.\n\nVoice search uses the speech-recognition service on your phone, which follows its own provider\'s privacy policy.\n\nPlayTube is not directed at children. This policy changes only with a new app release.\n\nContact: Telegram @YellowlFlash</string>
+    <string name="about_perms_text">Internet and network state: load content and detect Wi-Fi.\nNotifications and foreground service: playback controls while the app is in the background.\nWake lock: keep playing with the screen off.\nInstall packages: only to install an update that you approve.</string>
+    <string name="menu_feedback">Send feedback</string>
+    <string name="menu_feedback_hint">Report a problem or suggest an idea</string>
+</resources>
