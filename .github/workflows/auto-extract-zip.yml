@@ -4,10 +4,13 @@ on:
   push:
     paths:
       - "*.zip"
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
   workflow_dispatch:
 
 permissions:
   contents: write
+  workflows: write
 
 jobs:
   extract:
@@ -40,7 +43,6 @@ jobs:
                       with zf.open(member) as src, open(target, "wb") as dst:
                           shutil.copyfileobj(src, dst)
               archive.unlink()
-          PY
 
       - name: Commit extracted files
         run: |
