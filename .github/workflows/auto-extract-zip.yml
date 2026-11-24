@@ -1,15 +1,16 @@
-name: Auto Extract ZIP Uploads
+name: Replace Repository From Uploaded ZIP
 
 on:
   push:
     paths:
-      - "*.zip"
-      - ".github/workflows/*.yml"
-      - ".github/workflows/*.yaml"
-  workflow_dispatch:
+      - "**.zip"
 
 permissions:
   contents: write
+
+concurrency:
+  group: replace-repo-from-zip
+  cancel-in-progress: false
 
 jobs:
   extract:
@@ -18,40 +19,90 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract uploaded ZIP files safely (skip workflow files)
+      - name: Remove old files and extract uploaded ZIP archives
+        shell: bash
         run: |
           python3 <<'PY'
-          from pathlib import Path
+          from pathlib import Path, PurePosixPath
           from zipfile import ZipFile
           import shutil
+          import tempfile
 
           root = Path(".").resolve()
-          archives = sorted(root.glob("*.zip"))
+          workflow_dir = root / ".github" / "workflows"
 
-          for archive in archives:
-              print(f"Extracting: {archive.name}")
-              with ZipFile(archive) as zf:
-                  for member in zf.infolist():
-                      target = (root / member.filename).resolve()
-                      if target != root and root not in target.parents:
-                          raise RuntimeError(f"Unsafe ZIP path: {member.filename}")
+          # Find ZIPs anywhere in the repository and copy them outside the
+          # repository before cleaning the old files.
+          archives = sorted(
+              p for p in root.rglob("*.zip")
+              if ".git" not in p.relative_to(root).parts
+              and ".github/workflows" not in p.as_posix()
+          )
 
-                      # Skip workflow files; GitHub token cannot push workflow changes.
-                      relative = target.relative_to(root)
-                      if len(relative.parts) >= 3 and relative.parts[:2] == (".github", "workflows"):
-                          print(f"Skipping workflow file: {member.filename}")
-                          continue
+          if not archives:
+              raise SystemExit("No ZIP archive found; repository was not changed.")
 
-                      if member.is_dir():
-                          target.mkdir(parents=True, exist_ok=True)
-                          continue
-                      target.parent.mkdir(parents=True, exist_ok=True)
-                      with zf.open(member) as src, open(target, "wb") as dst:
-                          shutil.copyfileobj(src, dst)
-              archive.unlink()
+          with tempfile.TemporaryDirectory() as temp_dir:
+              temp = Path(temp_dir)
+              saved_archives = []
+
+              for index, archive in enumerate(archives):
+                  saved = temp / f"{index}_{archive.name}"
+                  shutil.copy2(archive, saved)
+                  saved_archives.append(saved)
+
+              # Keep only the GitHub workflow directory; delete all old
+              # project files and uploaded ZIPs.
+              for item in root.iterdir():
+                  if item.name in {".git", ".github"}:
+                      continue
+                  if item.is_dir():
+                      shutil.rmtree(item)
+                  else:
+                      item.unlink()
+
+              github_dir = root / ".github"
+              if github_dir.exists():
+                  for item in github_dir.iterdir():
+                      if item.name != "workflows":
+                          shutil.rmtree(item) if item.is_dir() else item.unlink()
+              workflow_dir.mkdir(parents=True, exist_ok=True)
+
+              # Extract every uploaded ZIP into the repository root.
+              for archive in saved_archives:
+                  print(f"Extracting {archive.name}")
+                  with ZipFile(archive) as zf:
+                      for member in zf.infolist():
+                          name = member.filename.replace("\\", "/")
+                          path = PurePosixPath(name)
+
+                          if path.is_absolute() or ".." in path.parts:
+                              raise RuntimeError(f"Unsafe ZIP path: {member.filename}")
+
+                          if not path.parts:
+                              continue
+
+                          # Never allow an uploaded ZIP to overwrite workflows.
+                          if path.parts[:2] == (".github", "workflows"):
+                              print(f"Skipping workflow file: {member.filename}")
+                              continue
+
+                          target = root.joinpath(*path.parts).resolve()
+                          if root not in target.parents and target != root:
+                              raise RuntimeError(f"Unsafe ZIP path: {member.filename}")
+
+                          if member.is_dir():
+                              target.mkdir(parents=True, exist_ok=True)
+                              continue
+
+                          target.parent.mkdir(parents=True, exist_ok=True)
+                          with zf.open(member) as source, open(target, "wb") as output:
+                              shutil.copyfileobj(source, output)
+
+          print("Old repository files removed; ZIP contents extracted.")
           PY
 
-      - name: Commit extracted files
+      - name: Commit replacement files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -59,6 +110,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "Extract uploaded ZIP archive(s)"
+            git commit -m "Replace repository with uploaded ZIP contents"
             git push
           fi
