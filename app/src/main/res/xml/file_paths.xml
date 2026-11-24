@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Crash log files written by CrashReporter when MediaStore is not
+         available (Android 9 and below, or a failed MediaStore write):
+           external: Android/data/com.play.tube/files/PlayTube/
+           internal: /data/data/com.play.tube/files/PlayTube/
+         On Android 10+ crash logs live in Download/PlayTube through
+         MediaStore and are shared via their MediaStore content URIs
+         directly — no FileProvider needed for those. -->
+    <external-files-path
+        name="crash_logs_external"
+        path="PlayTube/" />
+    <files-path
+        name="crash_logs_internal"
+        path="PlayTube/" />
+    <external-files-path name="download_movies" path="Movies/PlayTube/" />
+    <external-files-path name="download_music" path="Music/PlayTube/" />
+    <external-files-path name="app_updates" path="updates/" />
+    <files-path name="internal_updates" path="updates/" />
+    <files-path name="internal_downloads" path="PlayTube/" />
+</paths>

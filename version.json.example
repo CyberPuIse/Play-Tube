@@ -1,0 +1,8 @@
+{
+  "versionCode": 20,
+  "versionName": "1.5.8",
+  "apkUrl": "https://dry-paper-a39c.nixecs1.workers.dev/PlayTube-1.5.8.apk",
+  "changelog": "• New Telegram channel page on first open\n• New logo and a cleaner update screen\n• Modified copies now send you to the official download\n• Developer info updated\n• Smaller, harder-to-copy app build\n• Fixes",
+  "force": true,
+  "sha256": ""
+}

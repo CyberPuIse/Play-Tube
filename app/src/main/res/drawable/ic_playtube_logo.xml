@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PlayTube's own mark, drawn in code: a rounded red tile with a white
+     play triangle. Original design, not a copy of any other brand's logo. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <path
+        android:fillColor="#E10600"
+        android:pathData="M28,0H68A28,28 0 0 1 96,28V68A28,28 0 0 1 68,96H28A28,28 0 0 1 0,68V28A28,28 0 0 1 28,0Z" />
+    <path
+        android:fillColor="#33FFFFFF"
+        android:pathData="M28,0H68A28,28 0 0 1 96,28V36H0V28A28,28 0 0 1 28,0Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,28 Q34,28 34,31 V65 Q34,68 36,67 L66,50 Q68,48.5 66,47 L36,28 Z" />
+</vector>
