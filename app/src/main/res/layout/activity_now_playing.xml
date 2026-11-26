@@ -83,6 +83,7 @@
 
     <ImageButton
         android:id="@+id/queueButton"
+        android:visibility="gone"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_marginTop="4dp"
@@ -90,7 +91,6 @@
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/cd_queue"
         android:src="@drawable/ic_queue_music"
-        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:tint="@color/on_surface" />
@@ -117,7 +117,19 @@
             android:layout_gravity="center"
             android:elevation="14dp"
             android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/RoundedArt" />
+            app:strokeColor="#33FFFFFF"
+            app:strokeWidth="3dp"
+            android:padding="3dp"
+            app:shapeAppearanceOverlay="@style/CircleArt" />
+
+        <!-- CD centre hole: stays still while the disc spins. -->
+        <View
+            android:id="@+id/cdHole"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_cd_hole"
+            android:elevation="16dp" />
 
         <androidx.core.widget.NestedScrollView
             android:id="@+id/lyricsScroll"
@@ -277,6 +289,7 @@
 
             <ImageButton
                 android:id="@+id/radioButton"
+                android:visibility="gone"
                 android:layout_width="0dp"
                 android:layout_height="46dp"
                 android:layout_weight="1"
@@ -287,12 +300,33 @@
 
             <ImageButton
                 android:id="@+id/lyricsButton"
+                android:visibility="gone"
                 android:layout_width="0dp"
                 android:layout_height="46dp"
                 android:layout_weight="1"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/lyrics"
                 android:src="@drawable/ic_lyrics"
+                app:tint="@color/on_surface" />
+
+            <ImageButton
+                android:id="@+id/shuffleButton"
+                android:layout_width="0dp"
+                android:layout_height="46dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Shuffle"
+                android:src="@drawable/ic_shuffle"
+                app:tint="@color/on_surface" />
+
+            <ImageButton
+                android:id="@+id/repeatButton"
+                android:layout_width="0dp"
+                android:layout_height="46dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Repeat"
+                android:src="@drawable/ic_repeat"
                 app:tint="@color/on_surface" />
 
             <ImageButton
@@ -307,6 +341,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/timerButton"
+                android:visibility="gone"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="52dp"

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Notifications -->
+    <string name="notif_channel_downloads">Downloads</string>
+    <string name="notif_channel_downloads_done">Download results</string>
+    <string name="notif_downloading_one">Downloading</string>
+    <string name="notif_downloading_many">Downloading %1$d files</string>
+    <string name="notif_download_done_title">Download complete</string>
+    <string name="notif_download_failed_title">Download failed</string>
+    <string name="notif_retry">Retry</string>
+    <string name="notif_open_downloads">Open</string>
+
+    <!-- Why a download failed -->
+    <string name="fail_network">No internet connection</string>
+    <string name="fail_storage">Not enough storage on the phone</string>
+    <string name="fail_unavailable">The video is no longer available</string>
+    <string name="fail_unknown">Something went wrong</string>
+    <string name="download_retry">Retry</string>
+    <string name="download_retry_open_video">Open the video and start the download again</string>
+
+    <!-- Download picker -->
+    <string name="dl_quality_low">Low</string>
+    <string name="dl_quality_medium">Medium</string>
+    <string name="dl_quality_high">High</string>
+    <string name="dl_audio_title">Audio</string>
+    <string name="dl_video_title">Video</string>
+    <string name="dl_size_approx">~%1$s</string>
+
+    <!-- Duplicate / storage warnings -->
+    <string name="dl_duplicate_title">Already downloaded</string>
+    <string name="dl_duplicate_msg">This quality is already on your phone. Download it again?</string>
+    <string name="dl_duplicate_again">Download again</string>
+    <string name="dl_storage_warning">Low storage: about %1$s free, this file needs %2$s</string>
+
+    <!-- "Download started" popup -->
+    <string name="dl_started_title">Download started</string>
+    <string name="dl_started_sub">You can follow it in Downloads</string>
+    <string name="dl_started_view">View</string>
+    <string name="dl_started_not_now">Not now</string>
+
+    <!-- Downloads list -->
+    <string name="dl_speed_label">%1$s</string>
+    <string name="dl_percent_label">%1$d%%</string>
+    <string name="folder_move_short">Move to folder</string>
+</resources>

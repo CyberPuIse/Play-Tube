@@ -33,7 +33,9 @@ data class DownloadRecord(
     val status: String,
     /** Local file paths (one for AUDIO/VIDEO, two for AV pairs). */
     val filePaths: List<String>,
-    val downloadIds: List<Long>
+    val downloadIds: List<Long>,
+    /** Why a FAILED download failed: NETWORK | STORAGE | UNAVAILABLE | UNKNOWN (empty otherwise). */
+    val failReason: String = ""
 )
 
 /** A user-created playlist with its saved videos (all local, account-free). */
@@ -275,6 +277,17 @@ object LocalStore {
         if (idx >= 0) {
             val updated = list[idx].copy(status = status)
             list[idx] = updated
+            writeDownloads(prefs(ctx), list)
+        }
+    }
+
+    /** Stores why a download failed (shown in the list and the notification). */
+    fun updateDownloadFailReason(context: Context, downloadId: Long, reason: String) {
+        val ctx = context.applicationContext
+        val list = downloads(ctx).toMutableList()
+        val idx = list.indexOfFirst { record -> record.downloadIds.contains(downloadId) }
+        if (idx >= 0) {
+            list[idx] = list[idx].copy(failReason = reason)
             writeDownloads(prefs(ctx), list)
         }
     }
@@ -521,7 +534,8 @@ object LocalStore {
                     } ?: emptyList(),
                     downloadIds = o.optJSONArray("ids")?.let { ids ->
                         (0 until ids.length()).map { ids.optLong(it) }
-                    } ?: emptyList()
+                    } ?: emptyList(),
+                    failReason = o.optString("failReason")
                 )
             }
         } catch (e: Exception) {
@@ -543,6 +557,7 @@ object LocalStore {
                     .put("status", record.status)
                     .put("files", JSONArray(record.filePaths))
                     .put("ids", JSONArray(record.downloadIds))
+                    .put("failReason", record.failReason)
             )
         }
         sp.edit().putString(KEY_DOWNLOADS, arr.toString()).apply()

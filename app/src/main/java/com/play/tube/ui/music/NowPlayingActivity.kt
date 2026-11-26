@@ -132,7 +132,9 @@ class NowPlayingActivity : AppCompatActivity() {
             ).show()
         }
         binding.radioButton.setOnClickListener { restartRadio() }
-        binding.lyricsButton.setOnClickListener { toggleLyrics() }
+        binding.shuffleButton.setOnClickListener { PlaybackCenter.toggleShuffle(); bindModes() }
+        binding.repeatButton.setOnClickListener { PlaybackCenter.cycleRepeat(); bindModes() }
+        bindModes()
         binding.downloadButton.setOnClickListener { onDownloadClicked() }
         binding.queueButton.setOnClickListener { showQueue() }
         binding.timerButton.setOnClickListener { SleepTimerSheet(this).show() }
@@ -147,6 +149,10 @@ class NowPlayingActivity : AppCompatActivity() {
                 lp.width = size
                 lp.height = size
                 binding.art.layoutParams = lp
+                val hole = binding.cdHole.layoutParams
+                hole.width = (size * 0.17f).toInt()
+                hole.height = hole.width
+                binding.cdHole.layoutParams = hole
             }
         }
 
@@ -230,6 +236,11 @@ class NowPlayingActivity : AppCompatActivity() {
         super.onResume()
         // A theme / accent change while we were in the background.
         Themes.recreateIfNeeded(this)
+    }
+
+    override fun onDestroy() {
+        binding.art.removeCallbacks(spinTick)
+        super.onDestroy()
     }
 
     override fun onStop() {
@@ -340,6 +351,7 @@ class NowPlayingActivity : AppCompatActivity() {
         )
         val show = if (lyricsShown) binding.lyricsScroll else binding.art
         val hide = if (lyricsShown) binding.art else binding.lyricsScroll
+        binding.cdHole.isVisible = !lyricsShown
         show.alpha = 0f
         show.isVisible = true
         show.animate().alpha(1f).setDuration(220).start()
@@ -424,15 +436,55 @@ class NowPlayingActivity : AppCompatActivity() {
         binding.playPauseButton.contentDescription = getString(
             if (isPlaying) R.string.cd_pause else R.string.cd_play
         )
-        // Artwork "breathes": full size while playing, slightly smaller paused.
-        val scale = if (isPlaying) 1f else 0.88f
-        if (AppPrefs.animations) {
-            binding.art.animate().scaleX(scale).scaleY(scale).setDuration(260).start()
-        } else {
-            binding.art.animate().cancel()
-            binding.art.scaleX = scale
-            binding.art.scaleY = scale
+        spinTarget = if (AppPrefs.animations && isPlaying) SPIN_DEG_PER_SEC else 0f
+        startSpinLoop()
+    }
+
+    private fun bindModes() {
+        val accent = Themes.accentColor(this)
+        val off = getColor(R.color.on_surface)
+        val shuffle = PlaybackCenter.musicShuffle
+        binding.shuffleButton.setColorFilter(if (shuffle) accent else off)
+        val rep = PlaybackCenter.musicRepeat
+        binding.repeatButton.setImageResource(
+            if (rep == androidx.media3.common.Player.REPEAT_MODE_ONE) R.drawable.ic_repeat_one else R.drawable.ic_repeat
+        )
+        binding.repeatButton.setColorFilter(if (rep != androidx.media3.common.Player.REPEAT_MODE_OFF) accent else off)
+    }
+
+    // Slow, inertial CD spin: speed eases up when playing and eases down to a
+    // stop (instead of freezing) when paused, like a real disc.
+    private var spinVelocity = 0f
+    private var spinTarget = 0f
+    private var spinLast = 0L
+    private var spinRunning = false
+    private val spinTick = object : Runnable {
+        override fun run() {
+            val now = android.os.SystemClock.uptimeMillis()
+            val dt = ((now - spinLast) / 1000f).coerceIn(0f, 0.1f)
+            spinLast = now
+            val step = SPIN_ACCEL * dt
+            spinVelocity = when {
+                spinVelocity < spinTarget -> minOf(spinTarget, spinVelocity + step)
+                spinVelocity > spinTarget -> maxOf(spinTarget, spinVelocity - step)
+                else -> spinVelocity
+            }
+            binding.art.rotation = (binding.art.rotation + spinVelocity * dt) % 360f
+            if (spinVelocity <= 0.01f && spinTarget == 0f) {
+                spinVelocity = 0f
+                spinRunning = false
+            } else {
+                binding.art.postOnAnimation(this)
+            }
         }
+    }
+
+    private fun startSpinLoop() {
+        if (spinRunning) return
+        if (spinTarget == 0f && spinVelocity == 0f) return
+        spinRunning = true
+        spinLast = android.os.SystemClock.uptimeMillis()
+        binding.art.postOnAnimation(spinTick)
     }
 
     /** "Up next" card + queue button; also flags a radio session in the header. */
@@ -445,8 +497,6 @@ class NowPlayingActivity : AppCompatActivity() {
         binding.playingLabel.setText(
             if (radio) R.string.playing_from_radio else R.string.now_playing
         )
-        binding.queueButton.visibility =
-            if (queue.size > 1 || radio) android.view.View.VISIBLE else android.view.View.INVISIBLE
 
         if (next != null) {
             binding.upNextCard.isVisible = true
@@ -589,6 +639,8 @@ class NowPlayingActivity : AppCompatActivity() {
 
     companion object {
         private const val REQ_NOTIFICATIONS = 4712
+        private const val SPIN_DEG_PER_SEC = 14f   // one turn in ~26 s
+        private const val SPIN_ACCEL = 5f          // ~3 s to reach full speed / to stop
         private const val SWIPE_MIN_DISTANCE_PX = 260f
 
         fun start(context: Context) {

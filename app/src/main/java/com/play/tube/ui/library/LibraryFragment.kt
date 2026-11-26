@@ -104,11 +104,13 @@ class LibraryFragment : Fragment() {
         )
         downloadAdapter = DownloadAdapter(
             onClick = { record -> openDownload(record) },
-            onLongClick = { record -> showDownloadActions(record) },
+            onLongClick = { record -> confirmDelete(record) },
             onPause = { record ->
                 DownloadCenter.togglePause(requireContext(), record)
                 refresh()
-            }
+            },
+            onMove = { record -> showFolderPicker(record) },
+            onDelete = { record -> confirmDelete(record) }
         )
         playlistAdapter = PlaylistAdapter(
             onClick = { playlist ->
@@ -240,6 +242,7 @@ class LibraryFragment : Fragment() {
                     })
         }
         if (binding.list.adapter !== downloadAdapter) binding.list.adapter = downloadAdapter
+        (binding.list.itemAnimator as? androidx.recyclerview.widget.SimpleItemAnimator)?.supportsChangeAnimations = false
         downloadAdapter.submitList(downloads) { downloadAdapter.refreshLiveMetrics() }
         com.play.tube.util.EmptyState.set(
             binding.emptyView,
@@ -487,26 +490,36 @@ class LibraryFragment : Fragment() {
     }
 
     private fun openDownload(record: com.play.tube.data.DownloadRecord) {
+        // Same-kind finished downloads in the order shown, so "Next" continues the list.
+        val shown = downloadAdapter.currentList.filter { it.status == DownloadCenter.STATUS_DONE }
         if (record.type != DownloadCenter.TYPE_AUDIO) {
-            PlaybackCenter.playDownload(record)
+            val videos = shown.filter { it.type != DownloadCenter.TYPE_AUDIO }
+                .filter { r -> r.filePaths.isNotEmpty() && r.filePaths.all { java.io.File(it).exists() } }
+            val idx = videos.indexOfFirst { it.videoId == record.videoId && it.quality == record.quality && it.type == record.type }
+            if (idx >= 0) PlaybackCenter.playDownloads(videos, idx) else PlaybackCenter.playDownload(record)
+            // Open the full player right away instead of only the mini player.
+            com.play.tube.ui.player.PlayerActivity.startResume(requireContext())
             return
         }
-        val playable = AudioDownloadLibrary.playable(listOf(record)).firstOrNull()
-        if (playable == null) {
+        val audios = shown.filter { it.type == DownloadCenter.TYPE_AUDIO }
+        val playable = AudioDownloadLibrary.playable(audios)
+        val idx = playable.indexOfFirst { (audio, _) -> audio.videoId == record.videoId && audio.quality == record.quality }
+        if (idx < 0) {
             Toast.makeText(requireContext(), R.string.download_file_missing, Toast.LENGTH_SHORT).show()
             return
         }
-        val (audio, path) = playable
         PlaybackCenter.playMusicQueue(
-            listOf(QueueEntry(
-                url = "file://$path",
-                title = audio.title,
-                uploader = audio.uploader,
-                thumbnailUrl = audio.thumbnailUrl,
-                durationSec = 0L,
-                isMusic = true
-            )),
-            0
+            playable.map { (audio, path) ->
+                QueueEntry(
+                    url = "file://$path",
+                    title = audio.title,
+                    uploader = audio.uploader,
+                    thumbnailUrl = audio.thumbnailUrl,
+                    durationSec = 0L,
+                    isMusic = true
+                )
+            },
+            idx
         )
         NowPlayingActivity.start(requireContext())
     }

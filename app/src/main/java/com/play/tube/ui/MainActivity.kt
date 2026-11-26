@@ -439,7 +439,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        private const val EXTRA_OPEN_DOWNLOADS = "open_downloads"
+        const val EXTRA_OPEN_DOWNLOADS = "open_downloads"
         fun openDownloads(context: android.content.Context) {
             context.startActivity(Intent(context, MainActivity::class.java).apply {
                 putExtra(EXTRA_OPEN_DOWNLOADS, true)

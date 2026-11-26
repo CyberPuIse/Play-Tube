@@ -410,9 +410,32 @@ object PlaybackCenter {
         applyRepeatMode()
     }
 
+    /** Music player: shuffle and repeat (off / all / one). */
+    var musicShuffle: Boolean = false
+        private set
+    var musicRepeat: Int = Player.REPEAT_MODE_OFF
+        private set
+
+    fun toggleShuffle() { musicShuffle = !musicShuffle; applyRepeatMode() }
+
+    fun cycleRepeat() {
+        musicRepeat = when (musicRepeat) {
+            Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+            Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+            else -> Player.REPEAT_MODE_OFF
+        }
+        applyRepeatMode()
+    }
+
     private fun applyRepeatMode() {
         val p = playerRef ?: return
-        p.repeatMode = if (videoLoop && mode == Mode.VIDEO) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+        if (mode == Mode.AUDIO) {
+            p.shuffleModeEnabled = musicShuffle
+            p.repeatMode = musicRepeat
+        } else {
+            p.shuffleModeEnabled = false
+            p.repeatMode = if (videoLoop && mode == Mode.VIDEO) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+        }
     }
 
     /** "Skip silence" from the player settings. */
@@ -589,7 +612,7 @@ object PlaybackCenter {
             // A playlist always continues to its next video (like YouTube);
             // the autoplay setting only governs the related-videos queue.
             if (!videoRequestPending && playbackState == Player.STATE_ENDED && mode == Mode.VIDEO &&
-                (playlistMode || AppPrefs.videoAutoplayNext)
+                (playlistMode || localVideoRecords != null || AppPrefs.videoAutoplayNext)
             ) {
                 // The watch page may show an "Up next in 5" countdown first.
                 if (autoplayInterceptor?.invoke() != true) advance()
@@ -838,8 +861,12 @@ object PlaybackCenter {
                 }
             }
             Mode.VIDEO -> {
-                queueIndex = index
-                resolveCurrent()
+                if (localVideoRecords != null) {
+                    playLocalAt(index)
+                } else {
+                    queueIndex = index
+                    resolveCurrent()
+                }
             }
             Mode.NONE -> Unit
         }
@@ -894,8 +921,12 @@ object PlaybackCenter {
                 if (hasNextMediaItem()) seekToNextMediaItem()
             }
             Mode.VIDEO -> if (QueueNavigationPolicy.hasNext(queueIndex, queue.size)) {
-                queueIndex++
-                resolveCurrent()
+                if (localVideoRecords != null) {
+                    playLocalAt(queueIndex + 1)
+                } else {
+                    queueIndex++
+                    resolveCurrent()
+                }
             }
             Mode.NONE -> Unit
         }
@@ -908,8 +939,12 @@ object PlaybackCenter {
                 else seekTo(0)
             }
             Mode.VIDEO -> if (queueIndex > 0) {
-                queueIndex--
-                resolveCurrent()
+                if (localVideoRecords != null) {
+                    playLocalAt(queueIndex - 1)
+                } else {
+                    queueIndex--
+                    resolveCurrent()
+                }
             } else {
                 // Already at the top of the queue: restart the video
                 // (matches the behavior of the built-in previous button).
@@ -935,6 +970,7 @@ object PlaybackCenter {
         }
         mode = Mode.NONE
         playlistMode = false
+        localVideoRecords = null
         queue.clear()
         queueIndex = -1
         catalog = null
@@ -1047,8 +1083,56 @@ object PlaybackCenter {
 
     // ----- Local downloads -----
 
+    /** Finished video downloads being played one after another (null = not in use). */
+    private var localVideoRecords: List<DownloadRecord>? = null
+
+    /** Plays a list of finished downloads starting at [startIndex]; Next/Previous move through the list. */
+    fun playDownloads(records: List<DownloadRecord>, startIndex: Int) {
+        initFromApp()
+        val list = records.filter { it.filePaths.isNotEmpty() }
+        if (list.isEmpty()) return
+        val start = startIndex.coerceIn(0, list.size - 1)
+        resolveJob?.cancel()
+        pendingVideo.cancel()
+        setResolving(false)
+        mode = Mode.VIDEO
+        audioOnlyMode = false
+        radioMode = false
+        playlistMode = false
+        pendingMusic.clear()
+        queue.clear()
+        list.forEach { r ->
+            queue.add(
+                QueueEntry(
+                    url = "file://" + r.filePaths.first(), title = r.title, uploader = r.uploader,
+                    thumbnailUrl = r.thumbnailUrl, durationSec = 0L, isMusic = false
+                )
+            )
+        }
+        localVideoRecords = list
+        playLocalAt(start)
+    }
+
+    private fun playLocalAt(index: Int) {
+        val list = localVideoRecords ?: return
+        val record = list.getOrNull(index) ?: return
+        frameWatchJob?.cancel()
+        frameRecoveryStep = 0
+        queueIndex = index
+        notify { it.onQueueChanged() }
+        notify { it.onItemChanged(currentEntry) }
+        if (!startLocalFiles(record)) {
+            notify { it.onError("Downloaded file is missing") }
+            return
+        }
+        catalog = null
+        notify { it.onCatalogReady() }
+        ensureService()
+    }
+
     fun playDownload(record: DownloadRecord) {
         initFromApp()
+        localVideoRecords = null
         if (record.filePaths.isEmpty()) return
         resolveJob?.cancel()
         pendingVideo.cancel()
@@ -1119,6 +1203,7 @@ object PlaybackCenter {
     // ----- Resolution -----
 
     private fun setQueue(newQueue: List<QueueEntry>, startIndex: Int) {
+        localVideoRecords = null
         queue.clear()
         queue.addAll(newQueue)
         queueIndex = startIndex

@@ -16,8 +16,8 @@ android {
         applicationId = "com.play.tube"
         minSdk = 24
         targetSdk = 34
-        versionCode = 20
-        versionName = "1.5.8"
+        versionCode = 21
+        versionName = "1.6.1"
 
     }
 

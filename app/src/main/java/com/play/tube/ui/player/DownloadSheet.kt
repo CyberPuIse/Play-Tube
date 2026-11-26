@@ -69,131 +69,56 @@ class DownloadSheet(
         root.addView(songTitle)
 
         val musicOnly = audioOnly || !catalog.hasVideo
+        val durationSec = catalog.durationSec.takeIf { it > 0 } ?: entry.durationSec
 
-        // ----- Audio only -----
+        // ----- Audio: only Low / Medium / High -----
         val audioTrack = catalog.audioTracks.firstOrNull()
         if (audioTrack != null) {
-            root.addView(sectionTitle(context.getString(R.string.download_audio_section)))
-            audioTrack.streams
-                .filter { it.isUrl }
-                .sortedByDescending { it.averageBitrate }
-                .forEach { stream ->
-                    // NPE reports the audio average bitrate directly in kbps.
-                    val kbps = if (stream.averageBitrate > 0) {
-                        "${stream.averageBitrate} kbps"
-                    } else {
-                        "Audio"
-                    }
-                    val alreadyDone = downloaded(DownloadCenter.TYPE_AUDIO, kbps)
-                    root.addView(
-                        optionRow(
-                            if (alreadyDone) "$kbps • ${context.getString(R.string.download_option_done)}" else kbps + suffix(audioTrack),
-                            alreadyDone
-                        ) {
-                            if (alreadyDone) {
-                                Toast.makeText(
-                                    context, R.string.already_downloaded, Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                DownloadCenter.startSingle(
-                                    context,
-                                    entry.url,
-                                    entry.title,
-                                    entry.uploader,
-                                    entry.thumbnailUrl,
-                                    DownloadCenter.TYPE_AUDIO,
-                                    kbps,
-                                    stream.content,
-                                    "m4a"
-                                )
-                                toastStarted()
-                            }
-                            dismiss()
-                        }
+            root.addView(sectionTitle(context.getString(R.string.dl_audio_title)))
+            val buckets = audioTrack.streams.filter { it.isUrl }.groupBy { bucketOf(it.averageBitrate) }
+            listOf(Q_HIGH, Q_MEDIUM, Q_LOW).forEach { bucket ->
+                val stream = buckets[bucket]?.maxByOrNull { it.averageBitrate } ?: return@forEach
+                val label = context.getString(
+                    when (bucket) { Q_HIGH -> R.string.dl_quality_high; Q_MEDIUM -> R.string.dl_quality_medium; else -> R.string.dl_quality_low }
+                )
+                val size = sizeOf(stream.itagItem?.contentLength ?: -1L, stream.averageBitrate, durationSec)
+                addOption(root, label, size, DownloadCenter.TYPE_AUDIO, label, listOf(stream.content)) {
+                    DownloadCenter.startSingle(
+                        context, entry.url, entry.title, entry.uploader, entry.thumbnailUrl,
+                        DownloadCenter.TYPE_AUDIO, label, stream.content, "m4a"
                     )
                 }
+            }
         }
 
         if (!musicOnly) {
-            // ----- Video only -----
-            root.addView(sectionTitle(context.getString(R.string.download_video_section)))
-            val videoChoices = if (catalog.videoOnly.isNotEmpty()) {
-                catalog.videoOnly
-            } else {
-                // No adaptive streams: fall back to the muxed list.
-                catalog.muxed
-            }
-            videoChoices.forEach { v ->
-                val label = if (v.isVideoOnly) {
-                    "${v.effectiveHeight()}p (video only, no sound)"
-                } else {
-                    "${v.effectiveHeight()}p (muxed, video + sound)"
-                }
+            // ----- Video (with sound), 144p..1080p only -----
+            root.addView(sectionTitle(context.getString(R.string.dl_video_title)))
+            val pairing = catalog.videoOnly.isNotEmpty() && audioTrack?.best != null
+            val choices = (if (pairing) catalog.videoOnly else catalog.muxed)
+                .filter { it.effectiveHeight() in 144..1080 }
+            choices.forEach { v ->
                 val quality = "${v.effectiveHeight()}p"
-                val alreadyDone = downloaded(DownloadCenter.TYPE_VIDEO, quality)
-                root.addView(
-                    optionRow(
-                        if (alreadyDone) "$label • ${context.getString(R.string.download_option_done)}" else label,
-                        alreadyDone
-                    ) {
-                        if (alreadyDone) {
-                            Toast.makeText(context, R.string.already_downloaded, Toast.LENGTH_SHORT).show()
-                        } else {
-                            DownloadCenter.startSingle(
-                                context,
-                                entry.url,
-                                entry.title,
-                                entry.uploader,
-                                entry.thumbnailUrl,
-                                DownloadCenter.TYPE_VIDEO,
-                                quality,
-                                v.content,
-                                "mp4"
-                            )
-                            toastStarted()
-                        }
-                        dismiss()
-                    }
-                )
-            }
-
-            // ----- Video + Audio -----
-            if (catalog.videoOnly.isNotEmpty() && audioTrack?.best != null) {
-                root.addView(sectionTitle(context.getString(R.string.download_av_section)))
-                val note = TextView(context).apply {
-                    text = context.getString(R.string.download_pair_note)
-                    textSize = 12f
-                    maxLines = 2
-                    setTextColor(context.getColor(R.color.on_surface_variant))
-                    layoutParams = marginParams()
+                var size = sizeOf(v.itagItem?.contentLength ?: -1L, v.bitrate, durationSec)
+                if (pairing) {
+                    val a = audioTrack!!.best!!
+                    val asz = sizeOf(a.itagItem?.contentLength ?: -1L, a.averageBitrate, durationSec)
+                    size = if (size > 0 && asz > 0) size + asz else size
                 }
-                root.addView(note)
-                catalog.videoOnly.forEach { v ->
-                    val quality = "${v.effectiveHeight()}p"
-                    val alreadyDone = downloaded(DownloadCenter.TYPE_AV, quality)
-                    root.addView(
-                        optionRow(
-                            if (alreadyDone) "$quality • ${context.getString(R.string.download_option_done)}" else quality,
-                            alreadyDone
-                        ) {
-                            if (alreadyDone) {
-                                Toast.makeText(context, R.string.already_downloaded, Toast.LENGTH_SHORT).show()
-                            } else {
-                                DownloadCenter.startPair(
-                                    context,
-                                    entry.url,
-                                    entry.title,
-                                    entry.uploader,
-                                    entry.thumbnailUrl,
-                                    quality,
-                                    v.content,
-                                    audioTrack.best!!.content
-                                )
-                                toastStarted()
-                            }
-                            dismiss()
-                        }
-                    )
+                val type = if (pairing) DownloadCenter.TYPE_AV else DownloadCenter.TYPE_VIDEO
+                addOption(root, quality, size, type, quality,
+                    if (pairing) listOf(v.content, audioTrack!!.best!!.content) else listOf(v.content)) {
+                    if (pairing) {
+                        DownloadCenter.startPair(
+                            context, entry.url, entry.title, entry.uploader, entry.thumbnailUrl,
+                            quality, v.content, audioTrack!!.best!!.content
+                        )
+                    } else {
+                        DownloadCenter.startSingle(
+                            context, entry.url, entry.title, entry.uploader, entry.thumbnailUrl,
+                            DownloadCenter.TYPE_VIDEO, quality, v.content, "mp4"
+                        )
+                    }
                 }
             }
         }
@@ -202,6 +127,89 @@ class DownloadSheet(
         setContentView(scroll)
         super.show()
     }
+
+
+    private val Q_LOW = 0
+    private val Q_MEDIUM = 1
+    private val Q_HIGH = 2
+
+    /** kbps -> Low (<=64) / Medium (<=160) / High (above). Unknown counts as Medium. */
+    private fun bucketOf(kbps: Int): Int = when {
+        kbps <= 0 -> Q_MEDIUM
+        kbps <= 64 -> Q_LOW
+        kbps <= 160 -> Q_MEDIUM
+        else -> Q_HIGH
+    }
+
+    /** Real content length when known, else bitrate x duration. 0 = unknown. */
+    private fun sizeOf(contentLength: Long, kbps: Int, durationSec: Long): Long = when {
+        contentLength > 0 -> contentLength
+        kbps > 0 && durationSec > 0 -> kbps * 1000L / 8 * durationSec
+        else -> 0L
+    }
+
+    private fun formatSize(bytes: Long): String {
+        val mb = bytes / (1024.0 * 1024.0)
+        return if (mb >= 1024) String.format("%.1f GB", mb / 1024) else String.format("%.0f MB", mb.coerceAtLeast(1.0))
+    }
+
+    /** One row: label + size on the right. Warns on duplicates and low storage. */
+    private fun addOption(root: LinearLayout, label: String, size0: Long, type: String, quality: String, urls: List<String>, start: () -> Unit) {
+        var size = size0
+        val existing = DownloadCenter.recordsFor(context, entry.url)
+            .firstOrNull { it.type == type && it.quality == quality && it.status == DownloadCenter.STATUS_DONE }
+        fun textFor(sz: Long, exact: Boolean) = buildString {
+            append(label)
+            if (sz > 0) append("  ·  ").append(if (exact) formatSize(sz) else context.getString(R.string.dl_size_approx, formatSize(sz)))
+            if (existing != null) append("  ·  ").append(context.getString(R.string.download_option_done))
+        }
+        val row = optionRow(textFor(0L, true), existing != null) {
+            val go = {
+                if (existing != null) DownloadCenter.delete(context, existing)
+                if (size > 0 && DownloadCenter.freeBytes(context) < size + size / 10) {
+                    // Warn only; the download still starts.
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.dl_storage_warning, formatSize(DownloadCenter.freeBytes(context)), formatSize(size)),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                start()
+                toastStarted()
+                dismiss()
+            }
+            if (existing != null) {
+                androidx.appcompat.app.AlertDialog.Builder(context)
+                    .setTitle(R.string.dl_duplicate_title)
+                    .setMessage(R.string.dl_duplicate_msg)
+                    .setPositiveButton(R.string.dl_duplicate_again) { _, _ -> go() }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+            } else go()
+        }
+        root.addView(row)
+        // Replace the estimate with the real size reported by the server.
+        Thread {
+            val exact = urls.map { exactLength(it) }
+            if (exact.isNotEmpty() && exact.all { it > 0 }) {
+                val total = exact.sum()
+                row.post { size = total; row.text = textFor(total, true) }
+            }
+        }.start()
+    }
+
+    /** Real byte length of a stream URL (1-byte range request), or -1. */
+    private fun exactLength(url: String): Long = runCatching {
+        val client = okhttp3.OkHttpClient.Builder()
+            .connectTimeout(6, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(6, java.util.concurrent.TimeUnit.SECONDS).build()
+        client.newCall(
+            okhttp3.Request.Builder().url(url).header("Range", "bytes=0-0").build()
+        ).execute().use { r ->
+            r.header("Content-Range")?.substringAfterLast('/')?.toLongOrNull()
+                ?: r.body?.contentLength()?.takeIf { it > 0 } ?: -1L
+        }
+    }.getOrDefault(-1L)
 
     private fun sectionTitle(label: String): TextView =
         TextView(context).apply {

@@ -26,7 +26,7 @@ import com.play.tube.ui.MainActivity
 object DownloadToast {
 
     private const val TAG = "playtube_download_toast"
-    private const val DURATION_MS = 4000L
+    private const val DURATION_MS = 6000L
     private val handler = Handler(Looper.getMainLooper())
 
     fun showStarted(context: Context) {
@@ -47,65 +47,79 @@ object DownloadToast {
 
         val pill = LinearLayout(activity).apply {
             tag = TAG
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(16), dp(12), dp(16), dp(12))
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(16), dp(18), dp(12))
             background = GradientDrawable().apply {
-                cornerRadius = dp(24).toFloat()
-                setColor(Color.parseColor("#F2262626"))
+                cornerRadius = dp(22).toFloat()
+                setColor(Color.parseColor("#F5242426"))
             }
-            elevation = dp(10).toFloat()
+            elevation = dp(12).toFloat()
             isClickable = true
             isFocusable = true
         }
-        val message = TextView(activity).apply {
-            text = activity.getString(R.string.download_started)
+        val titleView = TextView(activity).apply {
+            text = activity.getString(R.string.dl_started_title)
             setTextColor(Color.WHITE)
-            textSize = 14f
-        }
-        val dot = TextView(activity).apply {
-            text = "  ·  "
-            setTextColor(Color.parseColor("#99FFFFFF"))
-            textSize = 14f
-        }
-        val action = TextView(activity).apply {
-            text = activity.getString(R.string.download_tap_to_view)
-            setTextColor(Color.parseColor("#FF5252"))
-            textSize = 14f
+            textSize = 16f
             setTypeface(null, Typeface.BOLD)
         }
-        pill.addView(message)
-        pill.addView(dot)
-        pill.addView(action)
+        val sub = TextView(activity).apply {
+            text = activity.getString(R.string.dl_started_sub)
+            setTextColor(Color.parseColor("#B3FFFFFF"))
+            textSize = 13f
+            setPadding(0, dp(2), 0, dp(10))
+        }
+        val buttons = LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.END
+        }
+        fun btn(label: String, color: String, bold: Boolean) = TextView(activity).apply {
+            text = label
+            setTextColor(Color.parseColor(color))
+            textSize = 14f
+            if (bold) setTypeface(null, Typeface.BOLD)
+            setPadding(dp(16), dp(8), dp(16), dp(8))
+            isClickable = true
+        }
+        val notNow = btn(activity.getString(R.string.dl_started_not_now), "#B3FFFFFF", false)
+        val view = btn(activity.getString(R.string.dl_started_view), "#FF5252", true)
+        buttons.addView(notNow)
+        buttons.addView(view)
+        pill.addView(titleView)
+        pill.addView(sub)
+        pill.addView(buttons)
 
-        val bottom = if (activity is MainActivity) dp(104) else dp(36)
+        val bottom = if (activity is MainActivity) dp(96) else dp(28)
         val lp = FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            Gravity.BOTTOM
         ).also {
             it.bottomMargin = bottom
-            it.marginStart = dp(16)
-            it.marginEnd = dp(16)
+            it.marginStart = dp(14)
+            it.marginEnd = dp(14)
         }
 
         fun dismiss() {
             handler.removeCallbacksAndMessages(null)
-            pill.animate().alpha(0f).translationY(dp(12).toFloat()).setDuration(180)
+            pill.animate().alpha(0f).translationY(dp(120).toFloat()).setDuration(220)
                 .withEndAction { (pill.parent as? ViewGroup)?.removeView(pill) }
                 .start()
         }
 
-        pill.setOnClickListener {
+        view.setOnClickListener {
             handler.removeCallbacksAndMessages(null)
             (pill.parent as? ViewGroup)?.removeView(pill)
             MainActivity.openDownloads(activity)
         }
+        notNow.setOnClickListener { dismiss() }
 
+        // Slides up from the bottom with a small overshoot.
         pill.alpha = 0f
-        pill.translationY = dp(12).toFloat()
+        pill.translationY = dp(120).toFloat()
         root.addView(pill, lp)
-        pill.animate().alpha(1f).translationY(0f).setDuration(200).start()
+        pill.animate().alpha(1f).translationY(0f).setDuration(320)
+            .setInterpolator(android.view.animation.OvershootInterpolator(0.9f)).start()
         handler.postDelayed({ dismiss() }, DURATION_MS)
     }
 

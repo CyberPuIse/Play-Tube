@@ -36,6 +36,7 @@ object LyricsRepository {
         .replace(Regex("(?i)official|lyric video|lyrics|video song|music video|full video|audio|hd|4k"), " ")
         .replace(Regex("(?i)\\s-\\s*topic\\b"), " ")
         .replace(Regex("(?i)vevo$"), " ")
+        .replace(Regex("(?i)\\b(feat|ft|featuring)\\.?\\s.*$"), " ")
         .replace(Regex("\\s+"), " ")
         .trim(' ', '-', '|', '~')
 
@@ -47,10 +48,14 @@ object LyricsRepository {
         if (parts.size >= 2) { artist = clean(parts[0]); title = clean(parts[1]) }
         if (title.isBlank()) return null
 
-        val queries = listOf(
+        // Title before a "|" / "," credit tail often finds songs the full title misses.
+        val shortTitle = title.split(",", "|", "/").first().trim()
+        val queries = listOfNotNull(
             "track_name=${enc(title)}&artist_name=${enc(artist)}",
             "q=${enc("$title $artist")}",
-            "q=${enc(title)}"
+            "q=${enc(title)}",
+            if (shortTitle.isNotBlank() && shortTitle != title) "q=${enc("$shortTitle $artist")}" else null,
+            if (shortTitle.isNotBlank() && shortTitle != title) "q=${enc(shortTitle)}" else null
         )
         for (q in queries) {
             val arr = runCatching { JSONArray(get("https://lrclib.net/api/search?$q")) }.getOrNull() ?: continue
@@ -77,7 +82,22 @@ object LyricsRepository {
             if (pick.first < 4) continue
             parse(pick.second)?.let { return it }
         }
-        return null
+        return fallbackPlain(title, artist)
+    }
+
+    /**
+     * Second source (lyrics.ovh, keyless): plain unsynced text, used only when
+     * lrclib has nothing. Covers some Hindi / Bangla songs (often written in
+     * Latin letters) that the main database lacks.
+     */
+    private fun fallbackPlain(title: String, artist: String): Lyrics? {
+        if (artist.isBlank()) return null
+        val body = runCatching {
+            get("https://api.lyrics.ovh/v1/${enc(artist).replace("+", "%20")}/${enc(title).replace("+", "%20")}")
+        }.getOrNull() ?: return null
+        val text = runCatching { org.json.JSONObject(body).optString("lyrics") }.getOrDefault("")
+        if (text.isBlank()) return null
+        return Lyrics(text.replace("\r", "").lines().map { Line(-1L, it.trim()) }, synced = false)
     }
 
     private fun parse(o: org.json.JSONObject): Lyrics? {

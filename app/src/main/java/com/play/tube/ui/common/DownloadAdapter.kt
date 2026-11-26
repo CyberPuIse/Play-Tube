@@ -11,6 +11,7 @@ import com.play.tube.data.DownloadRecord
 import com.play.tube.databinding.ItemDownloadBinding
 import com.play.tube.download.DownloadCenter
 import com.play.tube.download.DownloadSharing
+import com.play.tube.util.AppPrefs
 import com.play.tube.util.Thumbs
 
 /** Download entries on the Library > Downloads tab. */
@@ -18,21 +19,42 @@ class DownloadAdapter(
     private val onClick: (DownloadRecord) -> Unit,
     private val onLongClick: (DownloadRecord) -> Unit,
     private val onPause: ((DownloadRecord) -> Unit)? = null,
-    private val audioStyle: Boolean = false
+    private val audioStyle: Boolean = false,
+    private val onMove: ((DownloadRecord) -> Unit)? = null,
+    private val onDelete: ((DownloadRecord) -> Unit)? = null
 ) : ListAdapter<DownloadRecord, DownloadAdapter.VH>(DIFF) {
     companion object {
+        private val LIVE = Any()
         private val DIFF = object : DiffUtil.ItemCallback<DownloadRecord>() {
             override fun areItemsTheSame(a: DownloadRecord, b: DownloadRecord): Boolean =
                 a.videoId == b.videoId && a.type == b.type && a.quality == b.quality
             override fun areContentsTheSame(a: DownloadRecord, b: DownloadRecord): Boolean =
-                a.status == b.status && a.title == b.title && a.filePaths == b.filePaths
+                a.status == b.status && a.title == b.title && a.filePaths == b.filePaths &&
+                    a.failReason == b.failReason
         }
     }
 
     class VH(val binding: ItemDownloadBinding) : RecyclerView.ViewHolder(binding.root)
 
     /** Runtime metrics are not persisted in DownloadRecord or compared by DiffUtil. */
-    fun refreshLiveMetrics() { notifyItemRangeChanged(0, itemCount) }
+    fun refreshLiveMetrics() {
+        // Only rows that are actually transferring, and with a payload so the
+        // row is NOT rebound from scratch (that caused the 1-second blink).
+        for (i in 0 until itemCount) {
+            val st = getItem(i).status
+            if (st == DownloadCenter.STATUS_PENDING || st == DownloadCenter.STATUS_RUNNING || st == DownloadCenter.STATUS_PAUSED) {
+                notifyItemChanged(i, LIVE)
+            }
+        }
+    }
+
+    override fun onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>) {
+        if (payloads.isNotEmpty() && payloads.all { it === LIVE }) {
+            bindLive(holder.binding, getItem(position))
+        } else {
+            super.onBindViewHolder(holder, position, payloads)
+        }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
         VH(ItemDownloadBinding.inflate(LayoutInflater.from(parent.context), parent, false))
@@ -52,6 +74,17 @@ class DownloadAdapter(
             b.title.textSize = 15f
             b.meta.maxLines = 1
             b.root.setPadding((8 * density).toInt(), (8 * density).toInt(), (4 * density).toInt(), (8 * density).toInt())
+        }
+        if (!audioStyle) {
+            // YouTube-style: videos get a wide 16:9 thumbnail, music a small square cover.
+            val d = context.resources.displayMetrics.density
+            val isMusic = item.type == DownloadCenter.TYPE_AUDIO
+            val w = ((if (isMusic) 56 else 136) * d).toInt()
+            val h = ((if (isMusic) 56 else 76) * d).toInt()
+            if (b.thumb.layoutParams.width != w || b.thumb.layoutParams.height != h) {
+                b.thumb.layoutParams = b.thumb.layoutParams.apply { width = w; height = h }
+            }
+            b.title.maxLines = if (isMusic) 1 else 2
         }
         b.title.text = item.title
         val typeLabel = when (item.type) {
@@ -77,6 +110,53 @@ class DownloadAdapter(
             onPause?.invoke(item) ?: DownloadCenter.togglePause(context, item)
         }
 
+        bindLive(b, item)
+        b.overflowButton.visibility = if (item.status == DownloadCenter.STATUS_DONE ||
+            item.status == DownloadCenter.STATUS_FAILED) View.VISIBLE else View.GONE
+        val openMenu = {
+            val sheet = PremiumSheet(context).title(item.title)
+            if (item.status == DownloadCenter.STATUS_DONE) {
+                sheet.row(R.drawable.ic_play_arrow, context.getString(R.string.download_open)) { onClick(item) }
+                    .row(R.drawable.ic_share, context.getString(R.string.download_share)) {
+                        DownloadSharing.share(context, item)
+                    }
+                if (onMove != null) {
+                    sheet.row(R.drawable.ic_folder, context.getString(R.string.folder_move)) { onMove.invoke(item) }
+                }
+            } else if (item.status == DownloadCenter.STATUS_FAILED) {
+                sheet.row(R.drawable.ic_update, context.getString(R.string.download_retry)) {
+                    if (!DownloadCenter.retry(context, item)) {
+                        android.widget.Toast.makeText(
+                            context, R.string.download_retry_open_video, android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+            // Delete is kept apart from the other actions.
+            sheet.row(R.drawable.ic_delete, context.getString(R.string.download_delete), destructive = true) {
+                (onDelete ?: onLongClick).invoke(item)
+            }.show()
+        }
+        b.overflowButton.setOnClickListener { openMenu() }
+        Thumbs.load(b.thumb, item.thumbnailUrl)
+        b.root.setOnClickListener { if (item.status == DownloadCenter.STATUS_DONE) onClick(item) else if (item.status == DownloadCenter.STATUS_FAILED) openMenu() }
+        b.root.setOnLongClickListener { openMenu(); true }
+    }
+
+    /** Progress ring, bar and speed text: the only parts that change every second. */
+    private fun bindLive(b: ItemDownloadBinding, item: DownloadRecord) {
+        val context = b.root.context
+        val active = item.status == DownloadCenter.STATUS_PENDING ||
+            item.status == DownloadCenter.STATUS_RUNNING || item.status == DownloadCenter.STATUS_PAUSED
+        val paused = item.status == DownloadCenter.STATUS_PAUSED
+        val audioStyle = this.audioStyle
+        val statusLabel = when (item.status) {
+            DownloadCenter.STATUS_DONE -> context.getString(R.string.download_status_done)
+            DownloadCenter.STATUS_RUNNING -> context.getString(R.string.download_status_running)
+            DownloadCenter.STATUS_FAILED -> context.getString(R.string.download_status_failed)
+            DownloadCenter.STATUS_PAUSED -> context.getString(R.string.download_paused)
+            else -> context.getString(R.string.download_status_pending)
+        }
         // Exactly one snapshot per bind; getters must not change the sampling period.
         val metrics = DownloadCenter.metrics(item)
         val total = metrics.totalBytes
@@ -90,15 +170,31 @@ class DownloadAdapter(
         b.thumbProgress.isIndeterminate = active && !paused && total == null
         if (total != null && total > 0L) {
             b.thumbProgress.setProgressCompat(
-                (metrics.downloadedBytes.toDouble() / total.toDouble() * 100.0).toInt().coerceIn(0, 100), false
+                (metrics.downloadedBytes.toDouble() / total.toDouble() * 100.0).toInt().coerceIn(0, 100), true
             )
         }
         b.progress.isIndeterminate = active && !paused && total == null
-        b.progress.progress = if (total != null && total > 0L) {
-            (metrics.downloadedBytes.toDouble() / total.toDouble() * 100.0).toInt().coerceIn(0, 100)
+        val permille = if (total != null && total > 0L) {
+            (metrics.downloadedBytes.toDouble() / total.toDouble() * 1000.0).toInt().coerceIn(0, 1000)
         } else 0
-        b.speed.text = when {
-            paused -> "$sizeText\n${context.getString(R.string.download_paused)}"
+        // Smoothly glide the long bar to its new value instead of jumping.
+        (b.progress.getTag(R.id.progress) as? android.animation.ObjectAnimator)?.cancel()
+        if (active && !b.progress.isIndeterminate && AppPrefs.animations) {
+            val anim = android.animation.ObjectAnimator.ofInt(b.progress, "progress", b.progress.progress, permille)
+            anim.duration = 900L
+            anim.interpolator = android.view.animation.LinearInterpolator()
+            b.progress.setTag(R.id.progress, anim)
+            anim.start()
+        } else {
+            b.progress.progress = permille
+        }
+
+        val percentText = if (total != null && total > 0L) "${metrics.progressPercent}%  ·  " else ""
+        when {
+            paused -> {
+                b.speed.text = percentText + sizeText
+                b.speedRight.text = context.getString(R.string.download_paused)
+            }
             active -> {
                 val eta = metrics.remainingSeconds
                 val timeText = when {
@@ -107,39 +203,29 @@ class DownloadAdapter(
                     metrics.bytesPerSecond <= 0.0 && metrics.downloadedBytes > 0L -> context.getString(R.string.download_waiting)
                     else -> context.getString(R.string.download_estimating)
                 }
-                "$sizeText\n${DownloadMetricFormat.rate(metrics.bytesPerSecond)} · $timeText"
+                // Left: how much is done. Right: how fast / how long is left.
+                b.speed.text = percentText + sizeText
+                b.speedRight.text = "${DownloadMetricFormat.rate(metrics.bytesPerSecond)} · $timeText"
             }
-            item.status == DownloadCenter.STATUS_DONE -> downloaded
-            else -> ""
-        }
-        if (audioStyle) {
-            b.speed.text = when {
-                active -> {
-                    val percent = if (total != null && total > 0L) "${metrics.progressPercent}% · " else ""
-                    "$percent${b.speed.text}\n${item.quality} • $statusLabel"
-                }
-                item.status == DownloadCenter.STATUS_DONE -> listOfNotNull(
-                    item.quality.takeIf { it.isNotBlank() },
-                    downloaded
-                ).joinToString(" • ")
-                else -> statusLabel
+            item.status == DownloadCenter.STATUS_DONE -> {
+                b.speed.text = if (audioStyle) listOfNotNull(
+                    item.quality.takeIf { it.isNotBlank() }, downloaded
+                ).joinToString(" • ") else downloaded
+                b.speedRight.text = ""
+            }
+            else -> {
+                b.speed.text = if (audioStyle) statusLabel else ""
+                b.speedRight.text = ""
             }
         }
-        b.overflowButton.visibility = if (item.status == DownloadCenter.STATUS_DONE) View.VISIBLE else View.GONE
-        b.overflowButton.setOnClickListener { anchor ->
-            PremiumSheet(context)
-                .title(item.title)
-                .row(R.drawable.ic_play_arrow, context.getString(R.string.download_open)) { onClick(item) }
-                .row(R.drawable.ic_share, context.getString(R.string.download_share)) {
-                    DownloadSharing.share(context, item)
-                }
-                .row(R.drawable.ic_delete, context.getString(R.string.download_delete), destructive = true) {
-                    onLongClick(item) // Preserve Library's existing delete confirmation.
-                }
-                .show()
+        if (item.status == DownloadCenter.STATUS_FAILED) {
+            b.speed.text = DownloadNotifierText.reason(context, item)
         }
-        Thumbs.load(b.thumb, item.thumbnailUrl)
-        b.root.setOnClickListener { if (item.status == DownloadCenter.STATUS_DONE) onClick(item) }
-        b.root.setOnLongClickListener { onLongClick(item); true }
     }
+}
+
+internal object DownloadNotifierText {
+    fun reason(context: android.content.Context, item: DownloadRecord): String =
+        if (item.failReason.isBlank()) "" else
+            com.play.tube.download.DownloadNotifier.reasonText(context, item.failReason)
 }

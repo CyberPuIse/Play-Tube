@@ -57,6 +57,12 @@ object DownloadCenter {
     const val STATUS_DONE = "DONE"
     const val STATUS_FAILED = "FAILED"
 
+    /** Why a download failed (stored in DownloadRecord.failReason). */
+    const val REASON_NETWORK = "NETWORK"
+    const val REASON_STORAGE = "STORAGE"
+    const val REASON_UNAVAILABLE = "UNAVAILABLE"
+    const val REASON_UNKNOWN = "UNKNOWN"
+
     /**
      * Parallel connections per file. Workers pull small blocks from a shared
      * queue (like a download manager), so every request stays short.
@@ -108,6 +114,77 @@ object DownloadCenter {
     private val jobs = ConcurrentHashMap<Long, DownloadJob>()
 
     private var appCtx: Context? = null
+
+    /**
+     * Everything needed to start the same download again. Kept in memory only
+     * (stream links expire anyway); after a process restart "Retry" falls back
+     * to asking the person to open the video again.
+     */
+    private class RetrySpec(
+        val videoUrl: String, val title: String, val uploader: String, val thumbUrl: String,
+        val type: String, val quality: String, val streamUrl: String,
+        val audioUrl: String?, val fileExt: String
+    )
+
+    private val retrySpecs = ConcurrentHashMap<String, RetrySpec>()
+
+    private fun specKey(videoId: String, type: String, quality: String) = "$videoId|$type|$quality"
+
+    /** Starts a failed download again. Returns false when it can't be restarted from here. */
+    fun retry(context: Context, record: DownloadRecord): Boolean {
+        val spec = retrySpecs[specKey(record.videoId, record.type, record.quality)] ?: return false
+        synchronized(syncLock) { delete(context, record) }
+        if (spec.audioUrl != null) {
+            startPair(context, spec.videoUrl, spec.title, spec.uploader, spec.thumbUrl,
+                spec.quality, spec.streamUrl, spec.audioUrl)
+        } else {
+            startSingle(context, spec.videoUrl, spec.title, spec.uploader, spec.thumbUrl,
+                spec.type, spec.quality, spec.streamUrl, spec.fileExt)
+        }
+        return true
+    }
+
+    /** Free bytes on the volume that holds downloads. */
+    fun freeBytes(context: Context): Long = try {
+        android.os.StatFs((context.getExternalFilesDir(null) ?: context.filesDir).absolutePath).availableBytes
+    } catch (e: Exception) { Long.MAX_VALUE }
+
+    /** Local copy of the cover image saved next to a download (works offline), or the web URL. */
+    fun coverFor(record: DownloadRecord): String {
+        val local = record.filePaths.firstOrNull()?.let { File("$it.jpg") }
+        return if (local != null && local.isFile && local.length() > 0L) "file://" + local.absolutePath
+        else record.thumbnailUrl
+    }
+
+    /** Saves the cover image beside the file so lock screen / player art works offline. */
+    private fun saveCover(record: DownloadRecord) {
+        val target = record.filePaths.firstOrNull()?.let { File("$it.jpg") } ?: return
+        if (record.thumbnailUrl.isBlank() || target.isFile) return
+        scope.launch {
+            runCatching {
+                val req = Request.Builder().url(record.thumbnailUrl).build()
+                client.newCall(req).execute().use { resp ->
+                    if (resp.isSuccessful) resp.body?.bytes()?.let { target.writeBytes(it) }
+                }
+            }
+        }
+    }
+
+    /** Maps the exception behind a failed job to a reason shown to the person. */
+    private fun classify(error: Throwable?, httpCode: Int): String {
+        if (httpCode in listOf(401, 403, 404, 410)) return REASON_UNAVAILABLE
+        var t: Throwable? = error
+        while (t != null) {
+            val msg = t.message.orEmpty()
+            if (msg.contains("ENOSPC", true) || msg.contains("No space left", true)) return REASON_STORAGE
+            if (t is java.net.UnknownHostException || t is java.net.SocketTimeoutException ||
+                t is java.net.ConnectException || t is java.net.SocketException ||
+                t is javax.net.ssl.SSLException) return REASON_NETWORK
+            t = t.cause
+        }
+        if (error is IOException) return REASON_NETWORK
+        return if (httpCode >= 500) REASON_NETWORK else REASON_UNKNOWN
+    }
 
     /** All registry records belonging to one video page. */
     fun recordsFor(context: Context, videoUrl: String): List<DownloadRecord> {
@@ -205,6 +282,8 @@ object DownloadCenter {
         val videoId = videoIdOf(videoUrl)
         val fileName = "${videoId}_${type}_${quality.replace(" ", "")}.$fileExt"
         val path = destinationPath(context, fileName, type)
+        retrySpecs[specKey(videoId, type, quality)] =
+            RetrySpec(videoUrl, title, uploader, thumbUrl, type, quality, streamUrl, null, fileExt)
         val job = DownloadJob(streamUrl, File(path))
         jobs[job.id] = job
         // Registry entry first, THEN the engine: a job that dies within
@@ -224,6 +303,7 @@ object DownloadCenter {
             )
         )
         job.start()
+        DownloadService.ensureRunning(context)
     }
 
     /** Starts a video+audio pair download (AV) — both files download in parallel. */
@@ -239,6 +319,8 @@ object DownloadCenter {
     ) {
         appCtx = context.applicationContext
         val videoId = videoIdOf(videoUrl)
+        retrySpecs[specKey(videoId, TYPE_AV, quality)] =
+            RetrySpec(videoUrl, title, uploader, thumbUrl, TYPE_AV, quality, videoStreamUrl, audioStreamUrl, "mp4")
         val videoJob = DownloadJob(videoStreamUrl, File(destinationPath(context, "${videoId}_AV_${quality.replace(" ", "")}_v.mp4", TYPE_AV)))
         val audioJob = DownloadJob(audioStreamUrl, File(destinationPath(context, "${videoId}_AV_${quality.replace(" ", "")}_a.m4a", TYPE_AV)))
         jobs[videoJob.id] = videoJob
@@ -259,6 +341,7 @@ object DownloadCenter {
         )
         videoJob.start()
         audioJob.start()
+        DownloadService.ensureRunning(context)
     }
 
     /** Pause/resume live transfers; partial files and byte counters are kept in memory/on disk. */
@@ -364,13 +447,19 @@ object DownloadCenter {
                 if (newStatus != record.status) {
                     LocalStore.updateDownloadStatus(context, record.downloadIds.first(), newStatus)
                     if (newStatus == STATUS_DONE || newStatus == STATUS_FAILED) {
+                        val reason = recordJobs.firstOrNull { it.failed.get() }?.failReason ?: REASON_UNKNOWN
                         // Terminal state: now the live jobs can go.
                         recordJobs.forEach {
                             jobs.remove(it.id)
                             if (newStatus == STATUS_FAILED) it.cancel()
                         }
                         if (newStatus == STATUS_DONE) {
+                            saveCover(record)
                             announceDone(context)
+                            DownloadNotifier.done(context.applicationContext, record)
+                        } else {
+                            LocalStore.updateDownloadFailReason(context, record.downloadIds.first(), reason)
+                            DownloadNotifier.failed(context.applicationContext, record, reason)
                         }
                     }
                 }
@@ -400,6 +489,11 @@ object DownloadCenter {
         val finished = AtomicBoolean(false)
         val failed = AtomicBoolean(false)
 
+        /** Cause of the failure, filled in just before [failed] is set. */
+        @Volatile var failReason: String = REASON_UNKNOWN
+        @Volatile private var lastError: Throwable? = null
+        @Volatile private var lastHttp: Int = 0
+
         private var job: Job? = null
         private val cancelled = AtomicBoolean(false)
         val paused = AtomicBoolean(false)
@@ -423,7 +517,10 @@ object DownloadCenter {
             runCatching { if (file.exists()) file.delete() }
             job = DownloadCenter.scope.launch {
                 val ok = runCatching { downloadInternal() }
-                    .onFailure { Log.w(TAG, "Download job #$id failed for $url", it) }
+                    .onFailure {
+                        lastError = it
+                        Log.w(TAG, "Download job #$id failed for $url", it)
+                    }
                     .getOrElse { false }
                 if (ok && !cancelled.get()) {
                     // An unknown-length component now has an exact final size;
@@ -431,6 +528,7 @@ object DownloadCenter {
                     if (size <= 0L) size = progress.get()
                     finished.set(true)
                 } else {
+                    failReason = classify(lastError, lastHttp)
                     failed.set(true)
                     runCatching { file.delete() }
                 }
@@ -456,6 +554,7 @@ object DownloadCenter {
             DownloadCenter.client.newCall(probe).execute().use { resp ->
                 if (!resp.isSuccessful) {
                     Log.w(TAG, "Probe failed: HTTP ${resp.code} for $url")
+                    lastHttp = resp.code
                     return@withContext false
                 }
                 val contentRange = resp.header("Content-Range")
@@ -522,6 +621,7 @@ object DownloadCenter {
                 DownloadCenter.client.newCall(request).execute().use { resp ->
                     if (!resp.isSuccessful) {
                         Log.w(TAG, "Plain download failed: HTTP ${resp.code} for $url")
+                        lastHttp = resp.code
                         return@withContext false
                     }
                     val body = resp.body ?: return@withContext false
@@ -548,6 +648,7 @@ object DownloadCenter {
                 throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Plain download error for $url", e)
+                lastError = e
                 false
             }
         }
@@ -592,6 +693,7 @@ object DownloadCenter {
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     throw e
                 } catch (e: Exception) {
+                    lastError = e
                     attempt++
                     if (attempt > CHUNK_RETRIES) break
                     kotlinx.coroutines.delay(300L * attempt)
